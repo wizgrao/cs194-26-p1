@@ -15,14 +15,13 @@ someFunc = do args <- getArgs
               let (blueChannel, greenChannel, redChannel) = splitThirds image
                   (reconImage, gidx, ridx) = (match3Gaussian crossCorrelate redChannel greenChannel blueChannel) 
                 in do
-           ---       displayImage reconImage
-                  displayImage . sobel $ image
                   putStrLn ("greenIdx: " ++ show gidx)
                   putStrLn ("redIdx: " ++ show ridx)
+                  displayImage reconImage
                   writeImage (args !! 1) reconImage
 
 applyGaussian ::  Image VU RGB Double -> Image VU RGB Double
-applyGaussian = I.applyFilter (I.gaussianBlur  1.0)
+applyGaussian = I.applyFilter (I.gaussianBlur  1)
 
 
 readImg = readImageRGB VU 
@@ -76,8 +75,8 @@ demean meaned =
 crossCorrelate :: Image VU RGB Double -> Image VU RGB Double -> Double 
 crossCorrelate imLeft imRight = 
   let (h, w) = dims imLeft
-      cropcrop = crop (quot h 4, quot w 4) (quot h 2, quot h 2) :: Image VU RGB Double -> Image VU RGB Double
-      PixelRGB val _ _ = I.sum $ (demean.sobel.cropcrop $ imLeft)*(demean.sobel.cropcrop $ imRight)
+      cropcrop = crop (quot h 4, quot w 4) (quot (1*h) 2, quot (1*h) 2) :: Image VU RGB Double -> Image VU RGB Double
+      PixelRGB val _ _ = I.sum $ (demean.cropcrop $ imLeft)*(demean.cropcrop $ imRight)
   in -val
 
 findTranslateMin :: (Image VU RGB Double -> Image VU RGB Double -> Double) 
@@ -87,13 +86,15 @@ findTranslateMin :: (Image VU RGB Double -> Image VU RGB Double -> Double)
                     -> ((Int, Int), Image VU RGB Double)
 findTranslateMin cost base (i, j) (h, w) match = 
   let indeces = [(ii, jj) | ii <- [i..(i+h-1)], jj <- [j..(j+w-1)]]
-      (idx, lost, best) = foldl (\(idx, foundMin, curBest) newIdx -> 
-        let translated = I.translate Wrap newIdx match
-            loss = cost base translated
-        in if loss < foundMin then (newIdx, loss, translated) else (idx, foundMin, curBest))
-        ((0, 0), 1e9, match)
+      sobeledBase = sobel base
+      sobeledMatch = sobel match
+      (idx, lost) = foldl (\(idx, foundMin) newIdx -> 
+        let translated = I.translate Wrap newIdx sobeledMatch
+            loss = cost sobeledBase translated
+        in if loss < foundMin then (newIdx, loss) else (idx, foundMin))
+        ((0, 0), 1e9)
         indeces
-  in (idx, best)
+  in (idx, I.translate Wrap idx match)
 
 match3 blGreen blRed sizeGreen sizeRed cost rChannel gChannel bChannel = 
   let findDisp = findTranslateMin cost bChannel
@@ -102,10 +103,11 @@ match3 blGreen blRed sizeGreen sizeRed cost rChannel gChannel bChannel =
   in (combineRGB rbest gbest bChannel, gidx, ridx)
 
 
+
 sizeDown = I.downsample odd odd . applyGaussian 
 match3Gaussian cost rChannel gChannel bChannel =
   let (h, w) = I.dims rChannel
-  in if h > 64
+  in if h > 32
      then let (_, gidx, ridx) = match3Gaussian cost (sizeDown rChannel) (sizeDown gChannel) (sizeDown bChannel)
           in match3 (bimap ((subtract 1).(*2)) ((subtract 1).(*2)) gidx) (bimap ((subtract 1).(*2)) ((subtract 1).(*2)) ridx) (3, 3) (3,3) cost rChannel gChannel bChannel
-     else match3 (-4, -4) (-4, -4) (8, 8) (8, 8) cost rChannel gChannel bChannel 
+     else match3 (-2, -2) (-2, -2) (4, 4) (4, 4) cost rChannel gChannel bChannel 
