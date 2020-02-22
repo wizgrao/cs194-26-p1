@@ -1,4 +1,4 @@
-name:                cs184
+name:                cs19426
 version:             0.1.0.0
 github:              "githubuser/cs184"
 license:             BSD3
@@ -24,20 +24,57 @@ dependencies:
 - random
 - hmatrix
 - hip
+- Chart
+- Chart-cairo
+- containers
 
 library:
   source-dirs: src
+  ghc-options:
+  - -fsimpl-tick-factor=330
 
 executables:
-  cs184-exe:
+  proj1:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -fsimpl-tick-factor=330
     dependencies:
-    - cs184
+    - cs19426
+  proj2:
+    main:               Main.hs
+    source-dirs:        proj2
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    - -fsimpl-tick-factor=330
+    dependencies:
+    - cs19426
+  hybrid:
+    main:               Main.hs
+    source-dirs:        hybrid
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    - -fsimpl-tick-factor=330
+    dependencies:
+    - cs19426
+
+  blend:
+    main:               Main.hs
+    source-dirs:        blend
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    - -fsimpl-tick-factor=330
+    dependencies:
+    - cs19426
 
 tests:
   cs184-test:
@@ -48,4 +85,4 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - cs184
+    - cs19426
