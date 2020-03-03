@@ -23,7 +23,9 @@ main = do args <- getArgs
               rotImage = rotateDegrees degree img
               rotDogx = cropRotated img rotImage $ I.convolve Edge dogx rotImage
               rotDogy = cropRotated img rotImage $ I.convolve Edge dogy rotImage
-              sharpenedImage = I.convolve Edge (sharpen $ read (args !! 3)) img
+              sharpenedImage = I.convolve Edge (sharpen $ read (args !! 2)) img
+              blurImage =  I.applyFilter (I.gaussianBlur 2) img
+              resharpenedImage = I.convolve Edge (sharpen 2) blurImage
           --histogramGradient ((args !! 1) ++ "hist.png") imagedogx imagedogy 
           --writeImage ((args !! 1) ++ "dx.png") (I.normalize imagedx)
           --writeImage ((args !! 1) ++ "dy.png") (I.normalize imagedy)
@@ -37,11 +39,13 @@ main = do args <- getArgs
           --writeImage ((args !! 1) ++ "gtmag.png") (I.normalize gtmag)
           --writeImage ((args !! 1) ++ "dogmag.png") (I.normalize dogmag)
           --writeImage ((args !! 1) ++ "dogx.png") (I.pixelGrid 10  (I.normalize (toRGB dogx)))
-          --writeImage ((args !! 1) ++ "fourier.png") ( I.normalize . fourier $ img)
+          writeImage ((args !! 1) ++ "fourier.png") ( I.normalize . fourier $ img)
           --writeImage ((args !! 1) ++ "straight.png") rotImage
           --writeImage ((args !! 1) ++ "sharp.png") sharpenedImage
+          --writeImage ((args !! 1) ++ "blur.png") blurImage
+          --writeImage ((args !! 1) ++ "resharp.png") resharpenedImage
           --histogramGradient ((args !! 1) ++ "histstraight.png") rotDogx rotDogy 
-          sequence (L.map (\(i,l) -> writeImage ((args !! 1) ++ show i ++ "gauss.png") l) $ zip [0..15] $ take 16 $ gaussianPyramid 5 img) 
-          sequence (L.map (\(i,l) -> writeImage ((args !! 1) ++ show i ++ "lapl.png") $ normalize l) $ zip [0..15] $ take 16 $ laplacianPyramid 5 img) 
+          --sequence (L.map (\(i,l) -> writeImage ((args !! 1) ++ show i ++ "gauss.png") l) $ zip [0..15] $ take 16 $ gaussianPyramid 5 img) 
+          --sequence (L.map (\(i,l) -> writeImage ((args !! 1) ++ show i ++ "lapl.png") $ normalize l) $ zip [0..15] $ take 16 $ laplacianPyramid 5 img) 
           return ()
 

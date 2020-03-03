@@ -1,52 +1,147 @@
-## Overview
-In this project, I colorized images from the Prokudin-Gorskii glass plate images set. This involved finding the correct alignment of  red, green, and blue plates. To find the correct offsets, I matched the green and  red plates with the blue plate.
-## Algorithm
+## Part One 
+### Finite Difference Operator
+In this part of the project, we explore the gradient of an image. This is represented by the convolutions 
+$$D_x = \begin{bmatrix}
+1 & -1
+\end{bmatrix}$$ and 
+$$D_y =\begin{bmatrix}
+1 \\
+-1 
+\end{bmatrix}$$
+Here is the cameraman image we will be working with: 
 
-For this project, I maximied the cross correlation of the two images. This means I took the dot product of the two images after subtracting the mean pixel value from every pixel. Naively, I first maximized the cross correlation by offsetting the  red and blue plates from $-15$ to $15$ then keeping the offsets that maximize the cross correlation. In order to minimize the effects of edge distortion, I only used the cross corrlation of the middle quarter of the image.
-## Gaussian Pyramid
+![Cameraman](data2/cameraman.jpg){ height=400 }
 
-In order to use this method for larger images, I used a gaussian pyramid to speed up matching. First I applied a gaussian blur kernel with $\sigma = 1$ to the image, and then threw away all of the odd rows and columns. This is repeated until the image is less than $32$ wide. Then, the matching technique from above is applied. Recursively, we double the resulting offset, and then find the cross correlation for that offset, and the 8 offsets immediately around it for the next image sized up. We find the maximum, and use that offset for the next stage until the offset for the full sized image is reached. 
+This is the image convolved with $D_x$
 
-## Bells and Whistles
+![Cameraman * $D_x$](data2/cameradx.jpg){ height=400 }
+  
+This is the image convolved with $D_y$
 
-In order to match some of the more complicated inputs such as emir or melons, using the raw images in the cross correlation is not sufficient. This is because some of the channels are brighter than other in some parts of the image. I wanted to have the model try to match the shapes of the images rather than the textures, so I decided to use a sobel edge detected first. The sobel edge detector are the following convolutions:
-$$\begin{pmatrix}
--1 & 0 & 1\\
--2 & 0 & 2\\ 
--1 & 0 & 1
-\end{pmatrix}$$ and 
-$$\begin{pmatrix}
--1 & -2 & -1\\
-0 & 0 & 0 \\
-1 & 2 & 1
-\end{pmatrix}$$
-The resulting values after the convolution are squa red and added together to form the final image with the edge detector. 
-Here is an image of the regular blue channel of the melon image super imposed with the sobel edge detection of the  red and yellow filters. 
-![](yuhyuh.png){ height=600 } 
+![Cameraman * $D_y$](data2/camerady.jpg){ height=400 }
 
-We can see that the edge detector uses the edges as features instead of the interior of shapes in the image, as desi red.
+We can see that $D_y$ highlights vertical gradients and $D_x$ highlights horizontal gradients. We can construct gradient vectors at every point by taking $[ D_x, D_y ]$. We can plot the magnitude of this vector to combine both the horizontal and vertical edges. 
+
+![$D_x ^2 + D_y ^2$](data2/cameramag.jpg){ height=400 }
+
+To roughly find all of the edge in the image, we can binarize the magnitide of gradient image. Here is the image with threshold $0.4$
+
+![Binarized Magnitude of Gradient](data2/cameramagbin.jpg){ height=400 }
+
+### Derivative of Gaussian Filter
+
+For this part, we apply a gaussian filter before applying the derivative filters.
+
+![Gaussian then gradient x](data2/cameragtdx.jpg){ height=400 }
+
+![Gaussian then gradient y](data2/cameragtdy.jpg){ height=400 }
+
+We can combine the the two filters with convolution and get a new derivatieve of gradient filter.
+
+![Derivative of gaussian filter](data2/camdogx.jpg)
+
+The y derivative of gaussian is just above but transposed. When using this filter instead, we get the same image, as expected due to the associativity of convolution.
+
+![Derivative of gaussian X](data2/cameradogdx.jpg)
+
+![Derivative of gaussian Y](data2/cameradogdy.jpg)
+
+### Image Straightening
+
+In this part of the project, we straightened images based off of the edge orientation histograms. In these examples, we bin orientation vectors on their closest whole degree value, and we pick the rotation with the most in the bins corresponding to the cardinal directions.
 
 
-## Results
+| Original | Original Gradient | Straightened | Straightened Gradient
+|:--- |:--- |:- |:- |
+| ![original](data2/facadenew.jpg) | ![original gradient](data2/facadehist.jpg) | ![straightened](data2/facadenewstraight.jpg) | ![straightened](data2/facadenewhiststraight.jpg)|
+| ![original](data2/cat.jpg) | ![original gradient](data2/cathist.jpg) | ![straightened](data2/catstraight.jpg) | ![straightened](data2/cathiststraight.jpg)|
+| ![original](data2/bridge.jpg) | ![original gradient](data2/bridgehist.jpg) | ![straightened](data2/bridgestraight.jpg) | ![straightened](data2/bridgehiststraight.jpg)|
+| ![original](data2/building.jpg) | ![original gradient](data2/buildinghist.jpg) | ![straightened](data2/buildingstraight.jpg) | ![straightened](data2/buildinghiststraight.jpg)|
+| ![original](data2/loaf.jpg) | ![original gradient](data2/loafhist.jpg) | ![straightened](data2/loafstraight.jpg) | ![straightened](data2/loafhiststraight.jpg)|
 
-We can see the results of the sample images and a few extra images below. We can see that the algorithm has successfully aligned all of the images.
 
-| Original | Colo red | Offset |
+I actually thought that the cat image would be the failure case since it has soft textures, but the bottom of the cat ended up being a nice enough edge for the algorithm to grab onto it. The building image failed because there are too many edges in various angles due to the geometry of the building. The loaf is an amorphous shape so its hard for the algorithm to find strong edges in any direction. 
+
+## Part 2: Fun with frequencies!
+
+### Image sharpening
+
+For this part of the project, we sharpened images by applying a high pass filter, and adding a scaled version of the resulting image. If $G$ is a gaussian filter, $X$ the image and $\alpha$ the scaling factor, the resulting image is $\alpha(X - G*X) + X = X(\alpha I - \alpha G + I) = X*((\alpha + 1)I - \alpha G)$, where $I$ is the identity filter (the unit impulse). This can be represented with a single filter. 
+
+| Original | Sharpened |
+|:--- |:--- |
+| ![original](data2/taj.jpg) | ![sharpened](data2/tajsharp.jpg) |
+| ![original](data2/cat.jpg) | ![sharpened](data2/catsharp.jpg) |
+
+For evaluation, I blurred the cat image and resharpened it using the filter above.
+
+![blur](data2/catblur.jpg)
+
+![resharp](data2/catresharp.jpg)
+
+While the resharpened image does have the detail emphasized, a lot of the finer details have been blurred away and were not recovered. Therefore, while the image has some sharper edges, it does not contain the details of the original image.
+
+### Hybrid images.
+
+In this part of the project, we create hybrid images by combining the high frequencies of one images with the low frequencies of another image.
+
+| High | Low | Combined |
 |:--- |:--- |:- |
-| ![yuh](in/cathedral.jpg){ height=400 } | ![yeet](out/cathedral.jpg){ height=400 } | green offset: (5,2) red offset: (12,4) |
-| ![yuh](in/emir.jpg){ height=400 }| ![yeet](out/emir.jpg){ height=400 } | green offset: (49,24) red offset: (107,41) |
-| ![yuh](in/harvesters.jpg){ height=400 }  | ![yeet](out/harvesters.jpg){ height=400 } | green offset: (60,18) red offset: (124,14) |
-| ![yuh](in/icon.jpg){ height=400 } | ![yeet](out/icon.jpg){ height=400 } | green offset: (41,17) red offset: (90,24) |
-| ![yuh](in/lady.jpg){ height=400 } | ![yeet](out/lady.jpg){ height=400 } | green offset: (54,8) red offset: (115,14) |
-| ![yuh](in/melons.jpg){ height=400 } | ![yeet](out/melons.jpg){ height=400 } | green offset: (80,10) red offset: (176,14) |
-| ![yuh](in/monastery.jpg){ height=400 } | ![yeet](out/monastery.jpg){ height=400 } | green offset: (-4,2) red offset: (4,2) |
-| ![yuh](in/onion_church.jpg){ height=400 } | ![yeet](out/onion_church.jpg){ height=400 } | green offset: (51,27) red offset: (107,46) |
-| ![yuh](in/self_portrait.jpg){ height=400 } | ![yeet](out/self_portrait.jpg){ height=400 } | green offset: (78,29) red offset: (175,47) |
-| ![yuh](in/three_generations.jpg){ height=400 } | ![yeet](out/three_generations.jpg){ height=400 } | green offset: (52,12) red offset: (110,9) |
-| ![yuh](in/tobolsk.jpg){ height=400 } | ![yeet](out/tobolsk.jpg){ height=400 } | green offset: (4,4) red offset: (7,4) |
-| ![yuh](in/train.jpg){ height=400 } | ![yeet](out/train.jpg){ height=400 } | green offset: (42,2) red offset: (86,40) |
-| ![yuh](in/village.jpg){ height=400 } | ![yeet](out/village.jpg){ height=400 } | green offset: (65,11) red offset: (147,21) |
-| ![yuh](in/workshop.jpg){ height=400 } | ![yeet](out/workshop.jpg){ height=400 } | green offset: (54,-1) red offset: (106,-14) |
-| ![yuh](1.jpg){ height=400 } | ![yeet](1out.jpg){ height=400 } | green offset: (-2,1) red offset: (-1,3) |
-| ![yuh](2.jpg){ height=400 } | ![yeet](2out.jpg){ height=400 } | green offset: (6,7) red offset: (13,10) |
-| ![yuh](3.jpg){ height=400 } | ![yeet](3out.jpg){ height=400 } | green offset: (8,0) red offset: (13,0) |
+| ![high](data2/liz.jpg) | ![low](data2/poc.jpg) | ![hybrid](data2/pocpoc.jpg) |
+| ![low](data2/sid.jpg) | ![high](data2/bop.jpg) | ![hybrid](data2/sidbop2.jpg) |
+| ![low](data2/sidfourier.jpg) | ![high](data2/bopfourier.jpg) | ![hybrid](data2/sidbfourier.jpg) |
+| ![low](data2/cat.jpg) | ![high](data2/loaf.jpg) | ![hybrid](data2/catloaf.jpg) |
+
+
+Here, we take the fourier transform of the hybrid image of my roomate, Siddhant, when he was younger and now. The bread cat case did not work because they do not share some of the underlying structure of the image, so the illusion does not work well.
+
+### Laplacian and Gaussian Stacks
+
+In this part of the project, we create Laplacian and Gaussian stacks. This involves applying a low pass filter iteratively to an image to get the Gaussian stack. To get the Laplacian stack, we take the pairwise differences of adjacent images in the gaussian stack. This gives us band passed images. Here, we have a gaussian and laplacian stack of the famous dali painting.
+
+
+| Gaussian | Laplacian |
+|:--- |:--- |
+| ![gaussian](data2/link0gauss.jpg) | ![Laplacian](data2/link0lapl.jpg) |
+| ![gaussian](data2/link3gauss.jpg) | ![Laplacian](data2/link3lapl.jpg) |
+| ![gaussian](data2/link6gauss.jpg) | ![Laplacian](data2/link6lapl.jpg) |
+| ![gaussian](data2/link9gauss.jpg) | ![Laplacian](data2/link9lapl.jpg) |
+| ![gaussian](data2/link14gauss.jpg) | ![Laplacian](data2/link12lapl.jpg) |
+
+Here, we see that in the first images, we see more of the details of the woman and the scene in the painting, but as we go down we can see more of abraham lincoln.
+
+Now, we use the same example from above and see how my roommate transforms from his new self to his young self.
+
+| Gaussian | Laplacian |
+|:--- |:--- |
+| ![gaussian](data2/sidb0gauss.jpg) | ![Laplacian](data2/sidb0lapl.jpg) |
+| ![gaussian](data2/sidb3gauss.jpg) | ![Laplacian](data2/sidb3lapl.jpg) |
+| ![gaussian](data2/sidb6gauss.jpg) | ![Laplacian](data2/sidb6lapl.jpg) |
+| ![gaussian](data2/sidb9gauss.jpg) | ![Laplacian](data2/sidb9lapl.jpg) |
+| ![gaussian](data2/sidb14gauss.jpg) | ![Laplacian](data2/sidb12lapl.jpg) |
+
+### Multiresolution blending
+
+For this part of the project, we blend images together using multiresolution blending. To do this, we use low passes on the filter for different frequency bands of the image. 
+
+![oraple](data2/oraple2.jpg)
+
+I used the same half and half mask on the images of my roomate above.
+
+![Sidbop](data2/bopsid.jpg)
+
+I used the following mask to transfer old Siddhant's hair onto new Siddhants head
+
+![Mask](data2/mask.jpg)
+
+![Sidbop with hair transplant](data2/bopsidhair.jpg)
+
+Now, we show the frequency bands of the two images and the mask
+
+| Old Sid | New Sid | Mask |
+|:--- |:--- |:- |
+| ![Laplacian](data2/sidbl0lapl.jpg) | ![Laplacian](data2/blackb0lapl.jpg) | ![Mask](data2/mask0gauss.jpg) |
+| ![Laplacian](data2/sidbl3lapl.jpg) | ![Laplacian](data2/blackb3lapl.jpg) | ![Mask](data2/mask3gauss.jpg) |
+| ![Laplacian](data2/sidbl6lapl.jpg) | ![Laplacian](data2/blackb6lapl.jpg) | ![Mask](data2/mask6gauss.jpg) |
+| ![Laplacian](data2/sidbl9lapl.jpg) | ![Laplacian](data2/blackb9lapl.jpg) | ![Mask](data2/mask9gauss.jpg) |
+| ![Laplacian](data2/sidbl12lapl.jpg) | ![Laplacian](data2/blackb12lapl.jpg) | ![Mask](data2/mask12gauss.jpg) |
