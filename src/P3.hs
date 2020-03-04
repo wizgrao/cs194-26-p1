@@ -1,5 +1,6 @@
 module P3
   ( computeAffine 
+  , rasterImage
   , testRaster
   ) where
 
