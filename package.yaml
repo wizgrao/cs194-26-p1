@@ -27,6 +27,8 @@ dependencies:
 - Chart
 - Chart-cairo
 - containers
+- csv
+- parsec
 
 library:
   source-dirs: src
