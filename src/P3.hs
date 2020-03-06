@@ -2,9 +2,12 @@ module P3
   ( computeAffine 
   , csvToTriangles
   , interpImages 
+  , interpTriangles
   , cheeseError
   , Im
   , warpTriangles
+  , averageTriangles
+  , avgImages
   ) where
 
 
@@ -123,3 +126,6 @@ interpImages a im1 t1 im2 t2 =
 
 iscale :: Double -> Im -> Im
 iscale x = I.map  (\(I.PixelRGB r g b) -> I.PixelRGB (r*x) (g*x) (b*x))
+
+avgImages :: [Im] -> Im
+avgImages imgs = iscale (1.0 / (fromIntegral $ length imgs)) . sum $ imgs 
