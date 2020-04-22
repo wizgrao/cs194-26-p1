@@ -125,7 +125,7 @@ interpImages a im1 t1 im2 t2 =
   in iscale (1-a) firstWarped  + iscale a secondWarped
 
 iscale :: Double -> Im -> Im
-iscale x = I.map  (\(I.PixelRGB r g b) -> I.PixelRGB (r*x) (g*x) (b*x))
+iscale x = I.map  ( \ (I.PixelRGB r g b) -> I.PixelRGB (r*x) (g*x) (b*x))
 
 avgImages :: [Im] -> Im
 avgImages imgs = iscale (1.0 / (fromIntegral $ length imgs)) . sum $ imgs 
