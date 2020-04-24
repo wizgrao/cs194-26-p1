@@ -10,19 +10,24 @@ import Data.List as L
 import Text.CSV
 import Data.Either
 import Control.Monad
+import Prelude as P
+import System.Random
 
 main :: IO ()
 main = 
   do args <- getArgs
-     img  <- readImg $ head args :: IO Im
-     img2  <- readImg $ args !! 1 :: IO Im
-     let rest = tail $ tail args
-     let (pt1, pt2) = (toMPoints2 rest)
-     let c1 = Corr img pt1
-     let c2 = Corr img2 pt2
-     let (Corr im3 pt3) = warp2 c1 c2
-     displayImage $ drawCorrRed c1
-     displayImage $ drawCorrRed c2 
-     displayImageUsing defaultViewer True $ drawCorrRed $ Corr im3 pt3
-     writeImage "out.jpg" im3 
-     putStrLn "yuh"
+     im1  <- readImg $ head args
+     im2  <- readImg $ args !! 1
+     let (c1, c2) = findCorr2 0.2 im1 im2
+     g <- getStdGen 
+     let (cc1, cc2) = ransac g 2 1000 c1 c2
+     let warped = warp2 cc1 cc2
+     let warped2 = warp2 cc2 cc1
+     let Corr pan1 _ = warped
+     let Corr pan2 _ = warped2
+     displayImageUsing defaultViewer True $ drawCorrRed cc1
+     displayImageUsing defaultViewer True $ drawCorrRed cc2
+     displayImageUsing defaultViewer True $ drawCorrRed warped
+     displayImageUsing defaultViewer True $ drawCorrRed warped2
+     I.writeImage (args!!2) pan1
+     I.writeImage (args!!3) pan2

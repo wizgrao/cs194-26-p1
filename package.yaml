@@ -28,6 +28,7 @@ dependencies:
 - containers
 - csv
 - parsec
+- array
 
 library:
   source-dirs: src
