@@ -10,6 +10,8 @@ module P4
   , findCorr2
   , features
   , ransac
+  , toVector
+  , vectorDistances
   ) where
 
 import P3

@@ -1,6 +1,6 @@
 name:                cs19426
 version:             0.1.0.0
-github:              "githubuser/cs184"
+github:              "wizgrao/cs184"
 license:             BSD3
 author:              "Author name here"
 maintainer:          "example@example.com"
@@ -93,6 +93,39 @@ executables:
   blend:
     main:               Main.hs
     source-dirs:        blend
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    - -fsimpl-tick-factor=330
+    dependencies:
+    - cs19426
+
+  quilt:
+    main:               Main.hs
+    source-dirs:        quilt
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    - -fsimpl-tick-factor=330
+    dependencies:
+    - cs19426
+
+  texture:
+    main:               Main.hs
+    source-dirs:        texture
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    - -fsimpl-tick-factor=330
+    dependencies:
+    - cs19426
+
+  seam:
+    main:               Main.hs
+    source-dirs:        seam
     ghc-options:
     - -threaded
     - -rtsopts
